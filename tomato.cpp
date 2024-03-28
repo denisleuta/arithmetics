@@ -1,71 +1,99 @@
 #include <iostream>
-#include <cstdint>
 #include <bitset>
 
-template<typename T>
-class BinaryArithmetic {
+template<typename B>
+class ones_compl_int {
 private:
-    T value;
+    B data;
 
 public:
-    BinaryArithmetic(T val) : value(val) {}
+    ones_compl_int(B value = 0) : data(value) {}
 
-    std::string toBinary() const {
-        return std::bitset<sizeof(T) * 8>(value).to_string();
+   ones_compl_int twos_complement() const {
+        return ones_compl_int(~data + 1);
+   }
+
+    ones_compl_int operator+(const ones_compl_int& other) const {
+        return ones_compl_int(data + other.data);
     }
 
-    int toInteger() const {
-        return static_cast<int>(value);
+    ones_compl_int operator-(const ones_compl_int& other) const {
+        return *this + other.twos_complement();
     }
 
-    BinaryArithmetic operator+(const BinaryArithmetic& other) const {
-        return BinaryArithmetic(value + other.value);
-    }
+    ones_compl_int operator*(const ones_compl_int& other) const {
+        B result = 0;
+        B multiplicand = data;
+        B multiplier = other.data;
 
-    BinaryArithmetic operator-(const BinaryArithmetic& other) const {
-        return BinaryArithmetic(value - other.value);
-    }
-
-    BinaryArithmetic operator*(const BinaryArithmetic& other) const {
-        return BinaryArithmetic(value * other.value);
-    }
-
-    BinaryArithmetic operator/(const BinaryArithmetic& other) const {
-        return BinaryArithmetic(value / other.value);
-    }
-
-    BinaryArithmetic operator^(const int& exponent) const {
-        T result = 1;
-        for (int i = 0; i < exponent; ++i) {
-            result *= value;
+        for (int i = 0; i < sizeof(B) * 8; ++i) {
+            if (multiplier & 0x01) {
+                result += multiplicand;
+            }
+            multiplicand <<= 1;
+            multiplier >>= 1;
         }
-        return BinaryArithmetic(result);
+
+        return ones_compl_int(result);
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const BinaryArithmetic& bin) {
-        os << bin.toBinary() << " (" << bin.toInteger() << ")";
-        return os;
+    ones_compl_int operator/(const ones_compl_int& other) const {
+        B dividend = data;
+        B divisor = other.data;
+
+        B quotient = 0;
+        B remainder = 0;
+
+        bool dividend_sign = (dividend >> (sizeof(B) * 8 - 1)) & 0x01;
+        bool divisor_sign = (divisor >> (sizeof(B) * 8 - 1)) & 0x01;
+        bool result_sign = dividend_sign ^ divisor_sign;
+
+        dividend = ones_compl_int(dividend).twos_complement().data;
+        divisor = ones_compl_int(divisor).twos_complement().data;
+
+        for (int i = 0; i < sizeof(B) * 8; ++i) {
+            remainder <<= 1;
+            remainder |= (dividend >> (sizeof(B) * 8 - 1)) & 0x01;
+            dividend <<= 1;
+
+            if (remainder >= divisor) {
+                remainder -= divisor;
+                quotient |= 0x01;
+            }
+
+            quotient <<= 1;
+        }
+
+        quotient >>= 1;
+
+        return ones_compl_int(result_sign ? quotient : ones_compl_int(quotient).twos_complement().data);
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const ones_compl_int& obj) {
+        return os << std::bitset<sizeof(B) * 8>(obj.data);
     }
 };
 
 int main() {
-
     setlocale(LC_ALL, "RU");
 
-    int num1, num2; 
-    std::cout << "Введите первое целое число: ";
-    std::cin >> num1;
-    std::cout << "Введите второе целое число (степень): ";
-    std::cin >> num2;
+    ones_compl_int<uint32_t> a(5);
+    ones_compl_int<uint32_t> b(-5); 
 
-    BinaryArithmetic<int> binaryNumObj1(num1);
-    BinaryArithmetic<int> binaryNumObj2(num2);
+    std::cout << "a: " << a << std::endl;
+    std::cout << "b: " << b << std::endl;
 
-    std::cout << "Сумма: " << binaryNumObj1 + binaryNumObj2 << std::endl;
-    std::cout << "Разность: " << binaryNumObj1 - binaryNumObj2 << std::endl;
-    std::cout << "Произведение: " << binaryNumObj1 * binaryNumObj2 << std::endl;
-    std::cout << "Частное: " << binaryNumObj1 / binaryNumObj2 << std::endl;
-    std::cout << "Возведение в степень: " << (binaryNumObj1 ^ num2) << std::endl;
+    ones_compl_int<uint32_t> sum = a + b;
+    std::cout << "Сумма: " << sum << std::endl;
+
+    ones_compl_int<uint32_t> difference = a - b;
+    std::cout << "Разность: " << difference << std::endl;
+
+    ones_compl_int<uint32_t> product = a * b;
+    std::cout << "Произведение: " << product << std::endl;
+
+    ones_compl_int<uint32_t> quotient = a / b;
+    std::cout << "Частное: " << quotient << std::endl;
 
     return 0;
 }
