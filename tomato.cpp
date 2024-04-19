@@ -1,5 +1,4 @@
 #include <iostream>
-#include <bitset>
 
 template<typename B>
 class ones_compl_int {
@@ -9,9 +8,9 @@ private:
 public:
     ones_compl_int(B value = 0) : data(value) {}
 
-   ones_compl_int twos_complement() const {
+    ones_compl_int twos_complement() const {
         return ones_compl_int(~data + 1);
-   }
+    }
 
     ones_compl_int operator+(const ones_compl_int& other) const {
         return ones_compl_int(data + other.data);
@@ -70,29 +69,35 @@ public:
     }
 
     friend std::ostream& operator<<(std::ostream& os, const ones_compl_int& obj) {
-        return os << std::bitset<sizeof(B) * 8>(obj.data);
+        B temp_data = obj.data; 
+        B mask = static_cast<B>(1) << (sizeof(B) * 8 - 1); 
+        for (int i = 0; i < sizeof(B) * 8; ++i) {
+            os << ((temp_data & mask) ? '1' : '0'); 
+            temp_data <<= 1; 
+        }
+        return os;
     }
 };
 
 int main() {
     setlocale(LC_ALL, "RU");
 
-    ones_compl_int<uint32_t> a(5);
-    ones_compl_int<uint32_t> b(-5); 
+    ones_compl_int<int32_t> a(5);
+    ones_compl_int<int32_t> b(-5);
 
     std::cout << "a: " << a << std::endl;
     std::cout << "b: " << b << std::endl;
 
-    ones_compl_int<uint32_t> sum = a + b;
+    ones_compl_int<int32_t> sum = a + b;
     std::cout << "Сумма: " << sum << std::endl;
 
-    ones_compl_int<uint32_t> difference = a - b;
+    ones_compl_int<int32_t> difference = a - b;
     std::cout << "Разность: " << difference << std::endl;
 
-    ones_compl_int<uint32_t> product = a * b;
+    ones_compl_int<int32_t> product = a * b;
     std::cout << "Произведение: " << product << std::endl;
 
-    ones_compl_int<uint32_t> quotient = a / b;
+    ones_compl_int<int32_t> quotient = a / b;
     std::cout << "Частное: " << quotient << std::endl;
 
     return 0;
